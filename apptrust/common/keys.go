@@ -8,6 +8,7 @@ var OrderedAppVersionKeys = []string{
 	"status",
 	"current_stage",
 	"tag",
+	"message",
 }
 
 // OrderedAppKeys defines the display order for application table output

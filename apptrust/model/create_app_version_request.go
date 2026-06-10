@@ -6,6 +6,7 @@ type CreateAppVersionRequest struct {
 	Sources        *CreateVersionSources `json:"sources,omitempty"`
 	Tag            string                `json:"tag,omitempty"`
 	Draft          bool                  `json:"draft,omitempty"`
+	SkipUnassigned bool                  `json:"skip_unassigned,omitempty"`
 	Filters        *CreateVersionFilters `json:"filters,omitempty"`
 }
 

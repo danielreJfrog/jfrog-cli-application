@@ -86,6 +86,7 @@ func (cv *createAppVersionCommand) buildRequestPayload(ctx *components.Context) 
 		Sources:        sources,
 		Tag:            ctx.GetStringFlagValue(commands.TagFlag),
 		Draft:          ctx.GetBoolFlagValue(commands.DraftFlag),
+		SkipUnassigned: ctx.GetBoolFlagValue(commands.SkipUnassignedFlag),
 		Filters:        filters,
 	}, nil
 }

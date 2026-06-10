@@ -52,6 +52,7 @@ const (
 	OverwriteStrategyFlag             = "overwrite-strategy"
 	TagFlag                           = "tag"
 	DraftFlag                         = "draft"
+	SkipUnassignedFlag                = "skip-unassigned"
 	SourceTypeBuildsFlag              = "source-type-builds"
 	SourceTypeReleaseBundlesFlag      = "source-type-release-bundles"
 	SourceTypeApplicationVersionsFlag = "source-type-application-versions"
@@ -94,6 +95,7 @@ var flagsMap = map[string]components.Flag{
 	OverwriteStrategyFlag:             components.NewStringFlag(OverwriteStrategyFlag, "Strategy for handling target artifacts with the same path but different checksum. Supported values: "+coreutils.ListToText(model.OverwriteStrategyValues)+".", func(f *components.StringFlag) { f.Mandatory = false }),
 	TagFlag:                           components.NewStringFlag(TagFlag, "A tag to associate with the version. Must contain only alphanumeric characters, hyphens (-), underscores (_), and dots (.).", func(f *components.StringFlag) { f.Mandatory = false }),
 	DraftFlag:                         components.NewBoolFlag(DraftFlag, "Create the application version as a draft.", components.WithBoolDefaultValueFalse()),
+	SkipUnassignedFlag:                components.NewBoolFlag(SkipUnassignedFlag, "Automatically promote the new version to the first lifecycle stage when all of its source artifacts reside in repositories mapped to that stage. Otherwise the version is left unassigned and a message explaining why is returned.", components.WithBoolDefaultValueFalse()),
 	SourceTypeBuildsFlag:              components.NewStringFlag(SourceTypeBuildsFlag, "List of semicolon-separated (;) builds in the form of 'name=buildName1, id=runID1[, include-deps=true][, repo-key=repo1][, started=2023-01-01T12:34:56.789+0100]; name=buildName2, id=runID2[, include-deps=true][, repo-key=repo2][, started=2023-01-01T12:34:56.789+0100]' to be included in the new version.", func(f *components.StringFlag) { f.Mandatory = false }),
 	SourceTypeReleaseBundlesFlag:      components.NewStringFlag(SourceTypeReleaseBundlesFlag, "List of semicolon-separated (;) release bundles in the form of 'name=releaseBundleName1, version=version1[, project-key=project1][, repo-key=repo1]; name=releaseBundleName2, version=version2[, project-key=project2][, repo-key=repo2]' to be included in the new version.", func(f *components.StringFlag) { f.Mandatory = false }),
 	SourceTypeApplicationVersionsFlag: components.NewStringFlag(SourceTypeApplicationVersionsFlag, "List of semicolon-separated (;) application versions in the form of 'application-key=app1, version=version1; application-key=app2, version=version2' to be included in the new version.", func(f *components.StringFlag) { f.Mandatory = false }),
@@ -114,6 +116,7 @@ var commandFlags = map[string][]string{
 		SyncFlag,
 		TagFlag,
 		DraftFlag,
+		SkipUnassignedFlag,
 		SourceTypeBuildsFlag,
 		SourceTypeReleaseBundlesFlag,
 		SourceTypeApplicationVersionsFlag,
