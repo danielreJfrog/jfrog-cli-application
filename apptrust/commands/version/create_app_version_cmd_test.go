@@ -139,7 +139,6 @@ func TestCreateAppVersionCommand_FlagsSuite(t *testing.T) {
 				ctx.Arguments = []string{"app-key", "1.0.0"}
 				ctx.AddStringFlag(commands.TagFlag, "release-tag")
 				ctx.AddBoolFlag(commands.DraftFlag, true)
-				ctx.AddBoolFlag(commands.SkipUnassignedFlag, true)
 				ctx.AddStringFlag(commands.SourceTypeBuildsFlag, "name=build1,id=1.0.0,include-deps=true,repo-key=build-info-repo,started=2024-01-15T10:30:00Z;name=build2,id=2.0.0,include-deps=false")
 				ctx.AddStringFlag(commands.SourceTypeReleaseBundlesFlag, "name=rb1,version=1.0.0;name=rb2,version=2.0.0")
 				ctx.AddStringFlag(commands.SourceTypeApplicationVersionsFlag, "application-key=source-app,version=3.2.1")
@@ -151,7 +150,6 @@ func TestCreateAppVersionCommand_FlagsSuite(t *testing.T) {
 				Version:        "1.0.0",
 				Tag:            "release-tag",
 				Draft:          true,
-				SkipUnassigned: true,
 				Sources: &model.CreateVersionSources{
 					Builds: []model.CreateVersionBuild{
 						{Name: "build1", Number: "1.0.0", IncludeDependencies: true, RepositoryKey: "build-info-repo", Started: "2024-01-15T10:30:00Z"},
