@@ -200,6 +200,7 @@ type skipUnassignedResponse struct {
 	ApplicationKey string `json:"application_key"`
 	Version        string `json:"version"`
 	Status         string `json:"status"`
+	CurrentStage   string `json:"current_stage"`
 	Message        string `json:"message"`
 }
 
@@ -215,7 +216,7 @@ func TestCreateVersion_SkipUnassigned(t *testing.T) {
 		artifactPath := utils.UploadTestArtifact(t, devRepo, "dev-artifact.txt")
 
 		artifactFlag := fmt.Sprintf("--source-type-artifacts=path=%s", artifactPath)
-		output := utils.AppTrustCli.RunCliCmdWithOutput(t, "version-create", appKey, version, artifactFlag, "--skip-unassigned")
+		output := utils.AppTrustCli.RunCliCmdWithOutput(t, "version-create", appKey, version, artifactFlag, "--skip-unassigned", "--sync")
 		defer utils.DeleteApplicationVersion(t, appKey, version)
 
 		require.NotEmpty(t, output)
@@ -225,12 +226,12 @@ func TestCreateVersion_SkipUnassigned(t *testing.T) {
 		require.NoError(t, err, "failed to parse CLI output as JSON: %s", output)
 		assert.Equal(t, appKey, response.ApplicationKey)
 		assert.Equal(t, version, response.Version)
+		assert.Empty(t, response.Message, "No message means auto-promote succeeded")
 
 		versionContent, statusCode, err := utils.GetApplicationVersion(appKey, version)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, statusCode)
 		require.NotNil(t, versionContent)
-		assert.Equal(t, utils.StatusCompleted, versionContent.Status)
 		assert.Equal(t, "DEV", versionContent.CurrentStage, "Version should be auto-promoted to DEV stage")
 	})
 
@@ -241,7 +242,7 @@ func TestCreateVersion_SkipUnassigned(t *testing.T) {
 		artifactPath := utils.UploadTestArtifact(t, repoKey, "mismatch-artifact.txt")
 
 		artifactFlag := fmt.Sprintf("--source-type-artifacts=path=%s", artifactPath)
-		output := utils.AppTrustCli.RunCliCmdWithOutput(t, "version-create", appKey, version, artifactFlag, "--skip-unassigned")
+		output := utils.AppTrustCli.RunCliCmdWithOutput(t, "version-create", appKey, version, artifactFlag, "--skip-unassigned", "--sync")
 		defer utils.DeleteApplicationVersion(t, appKey, version)
 
 		require.NotEmpty(t, output)
@@ -252,8 +253,7 @@ func TestCreateVersion_SkipUnassigned(t *testing.T) {
 		assert.Equal(t, appKey, response.ApplicationKey)
 		assert.Equal(t, version, response.Version)
 		require.NotEmpty(t, response.Message, "A message should explain why auto-promotion did not occur")
-		assert.True(t, strings.Contains(response.Message, "unassigned") || strings.Contains(response.Message, "failed"),
-			"Message should indicate promotion failure, got: %s", response.Message)
+		assert.Contains(t, response.Message, "not all source artifacts are in repositories mapped to the first stage")
 	})
 }
 

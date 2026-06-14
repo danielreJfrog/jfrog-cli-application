@@ -164,6 +164,8 @@ func uploadSimpleFileToArtifactory(t *testing.T, repoKey, targetFileName string)
 	err = summary.Close()
 	require.NoError(t, err)
 
+	reindexRepo(t, repoKey)
+
 	return targetPath
 }
 
