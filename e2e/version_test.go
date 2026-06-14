@@ -212,11 +212,10 @@ func TestCreateVersion_SkipUnassigned(t *testing.T) {
 	t.Run("auto-promotes when source repo is mapped to first stage", func(t *testing.T) {
 		version := utils.GenerateUniqueKey("skip-ua-ok")
 
-		devRepo := utils.CreateGenericRepoWithEnv(t, "dev-local", []string{"DEV"})
-		artifactPath := utils.UploadTestArtifact(t, devRepo, "dev-artifact.txt")
-
-		artifactFlag := fmt.Sprintf("--source-type-artifacts=path=%s", artifactPath)
-		output := utils.AppTrustCli.RunCliCmdWithOutput(t, "version-create", appKey, version, artifactFlag, "--skip-unassigned", "--sync")
+		testPackage := utils.GetTestPackage(t)
+		packageFlag := fmt.Sprintf("--source-type-packages=type=%s, name=%s, version=%s, repo-key=%s",
+			testPackage.PackageType, testPackage.PackageName, testPackage.PackageVersion, testPackage.RepoKey)
+		output := utils.AppTrustCli.RunCliCmdWithOutput(t, "version-create", appKey, version, packageFlag, "--skip-unassigned", "--sync")
 		defer utils.DeleteApplicationVersion(t, appKey, version)
 
 		require.NotEmpty(t, output)
