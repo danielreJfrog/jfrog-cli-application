@@ -250,6 +250,34 @@ func TestParsePathMappings(t *testing.T) {
 			expectError: true,
 			errContains: "more entries",
 		},
+		{
+			name:        "map-type alone without map-in/map-out - error",
+			mapType:     "maven",
+			expectError: true,
+			errContains: "must be provided together",
+		},
+		{
+			name:        "trailing semicolon in map-in produces empty entry - error",
+			mapIn:       "(.*);",
+			mapOut:      "release/$1;target/$1",
+			expectError: true,
+			errContains: "entry 2 is empty",
+		},
+		{
+			name:        "trailing semicolon in map-out produces empty entry - error",
+			mapIn:       "(.*);(.*\\.jar)",
+			mapOut:      "release/$1;",
+			expectError: true,
+			errContains: "entry 2 is empty",
+		},
+		{
+			name:        "empty map-type entry - error",
+			mapIn:       "(.*)",
+			mapOut:      "release/$1",
+			mapType:     ";",
+			expectError: true,
+			errContains: "entry 1 is empty",
+		},
 	}
 
 	for _, tt := range tests {

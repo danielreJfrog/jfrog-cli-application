@@ -1,7 +1,6 @@
 package version
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/jfrog/jfrog-cli-application/apptrust/commands"
@@ -82,17 +81,30 @@ func ParseOverwriteStrategy(ctx *components.Context) (string, error) {
 func ParsePathMappings(ctx *components.Context) (*model.PromotionModifications, error) {
 	mapInStr := ctx.GetStringFlagValue(commands.MapInFlag)
 	mapOutStr := ctx.GetStringFlagValue(commands.MapOutFlag)
+	mapTypeStr := ctx.GetStringFlagValue(commands.MapTypeFlag)
 
-	if mapInStr == "" && mapOutStr == "" {
+	if mapInStr == "" && mapOutStr == "" && mapTypeStr == "" {
 		return nil, nil
 	}
 
 	if mapInStr == "" || mapOutStr == "" {
-		return nil, errorutils.CheckErrorf("both --%s and --%s must be provided together", commands.MapInFlag, commands.MapOutFlag)
+		return nil, errorutils.CheckErrorf("--%s and --%s must be provided together (both are required for path mappings)",
+			commands.MapInFlag, commands.MapOutFlag)
 	}
 
 	inputs := utils.ParseSliceFlag(mapInStr)
 	outputs := utils.ParseSliceFlag(mapOutStr)
+
+	for i, v := range inputs {
+		if v == "" {
+			return nil, errorutils.CheckErrorf("--%s entry %d is empty", commands.MapInFlag, i+1)
+		}
+	}
+	for i, v := range outputs {
+		if v == "" {
+			return nil, errorutils.CheckErrorf("--%s entry %d is empty", commands.MapOutFlag, i+1)
+		}
+	}
 
 	if len(inputs) != len(outputs) {
 		return nil, errorutils.CheckErrorf("--%s and --%s must have the same number of entries (got %d and %d)",
@@ -100,8 +112,13 @@ func ParsePathMappings(ctx *components.Context) (*model.PromotionModifications, 
 	}
 
 	var packageTypes []string
-	if mapTypeStr := ctx.GetStringFlagValue(commands.MapTypeFlag); mapTypeStr != "" {
+	if mapTypeStr != "" {
 		packageTypes = utils.ParseSliceFlag(mapTypeStr)
+		for i, v := range packageTypes {
+			if v == "" {
+				return nil, errorutils.CheckErrorf("--%s entry %d is empty", commands.MapTypeFlag, i+1)
+			}
+		}
 		if len(packageTypes) > len(inputs) {
 			return nil, errorutils.CheckErrorf("--%s has more entries (%d) than --%s (%d)",
 				commands.MapTypeFlag, len(packageTypes), commands.MapInFlag, len(inputs))
@@ -120,20 +137,4 @@ func ParsePathMappings(ctx *components.Context) (*model.PromotionModifications, 
 	}
 
 	return &model.PromotionModifications{Mappings: mappings}, nil
-}
-
-// BuildPathMappingsDescription returns a human-readable description of path mappings for logging.
-func BuildPathMappingsDescription(modifications *model.PromotionModifications) string {
-	if modifications == nil || len(modifications.Mappings) == 0 {
-		return ""
-	}
-	var parts []string
-	for _, m := range modifications.Mappings {
-		desc := fmt.Sprintf("%s → %s", m.Input, m.Output)
-		if m.PackageType != "" {
-			desc = fmt.Sprintf("[%s] %s", m.PackageType, desc)
-		}
-		parts = append(parts, desc)
-	}
-	return strings.Join(parts, "; ")
 }
