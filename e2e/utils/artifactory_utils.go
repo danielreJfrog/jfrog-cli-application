@@ -138,11 +138,7 @@ func CreateGenericRepoWithEnv(t *testing.T, suffix string, environments []string
 	return repoKey
 }
 
-func UploadTestArtifact(t *testing.T, repoKey, fileName string) string {
-	return uploadSimpleFileToArtifactory(t, repoKey, fileName)
-}
-
-func uploadSimpleFileToArtifactory(t *testing.T, repoKey, targetFileName string) string {
+func UploadTestArtifact(t *testing.T, repoKey, targetFileName string) string {
 	tmpFile, err := os.CreateTemp("", "e2e-artifact-*.txt")
 	require.NoError(t, err)
 	_, err = tmpFile.WriteString("test-artifact-content")

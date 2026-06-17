@@ -84,7 +84,7 @@ func GetTestPackage(t *testing.T) *TestPackageResources {
 func GetTestArtifact(t *testing.T) string {
 	if testArtifactPath == "" {
 		repoKey := createGenericRepo(t)
-		testArtifactPath = uploadSimpleFileToArtifactory(t, repoKey, "test-artifact.txt")
+		testArtifactPath = UploadTestArtifact(t, repoKey, "test-artifact.txt")
 	}
 	return testArtifactPath
 }
