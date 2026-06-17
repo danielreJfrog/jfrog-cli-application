@@ -7,6 +7,7 @@ import (
 	"github.com/jfrog/jfrog-cli-application/apptrust/model"
 	"github.com/jfrog/jfrog-cli-core/v2/plugins/components"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseOverwriteStrategy(t *testing.T) {
@@ -159,6 +160,121 @@ func TestBuildPromotionParams(t *testing.T) {
 			assert.Equal(t, tt.expectedPromotionType, promotionType, "promotion type mismatch")
 			assert.Equal(t, tt.expectedIncludeRepos, includeRepos, "include repos mismatch")
 			assert.Equal(t, tt.expectedExcludeRepos, excludeRepos, "exclude repos mismatch")
+		})
+	}
+}
+
+func TestParsePathMappings(t *testing.T) {
+	tests := []struct {
+		name        string
+		mapIn       string
+		mapOut      string
+		mapType     string
+		expected    *model.PromotionModifications
+		expectError bool
+		errContains string
+	}{
+		{
+			name:     "no flags - returns nil",
+			expected: nil,
+		},
+		{
+			name:   "single mapping without package type",
+			mapIn:  "(.*)",
+			mapOut: "stable-release/$1",
+			expected: &model.PromotionModifications{
+				Mappings: []model.PromotionPathMapping{
+					{Input: "(.*)", Output: "stable-release/$1"},
+				},
+			},
+		},
+		{
+			name:    "single mapping with package type",
+			mapIn:   "(.*)",
+			mapOut:  "stable-release/$1",
+			mapType: ".*",
+			expected: &model.PromotionModifications{
+				Mappings: []model.PromotionPathMapping{
+					{PackageType: ".*", Input: "(.*)", Output: "stable-release/$1"},
+				},
+			},
+		},
+		{
+			name:    "multiple mappings",
+			mapIn:   "(.*);(.*\\.jar)",
+			mapOut:  "release/$1;jars/$1",
+			mapType: ".*;maven",
+			expected: &model.PromotionModifications{
+				Mappings: []model.PromotionPathMapping{
+					{PackageType: ".*", Input: "(.*)", Output: "release/$1"},
+					{PackageType: "maven", Input: "(.*\\.jar)", Output: "jars/$1"},
+				},
+			},
+		},
+		{
+			name:    "fewer package types than inputs - partial assignment",
+			mapIn:   "(.*);(.*\\.jar)",
+			mapOut:  "release/$1;jars/$1",
+			mapType: "maven",
+			expected: &model.PromotionModifications{
+				Mappings: []model.PromotionPathMapping{
+					{PackageType: "maven", Input: "(.*)", Output: "release/$1"},
+					{Input: "(.*\\.jar)", Output: "jars/$1"},
+				},
+			},
+		},
+		{
+			name:        "map-in without map-out - error",
+			mapIn:       "(.*)",
+			expectError: true,
+			errContains: "must be provided together",
+		},
+		{
+			name:        "map-out without map-in - error",
+			mapOut:      "target/$1",
+			expectError: true,
+			errContains: "must be provided together",
+		},
+		{
+			name:        "mismatched count - error",
+			mapIn:       "(.*);(.*\\.jar)",
+			mapOut:      "release/$1",
+			expectError: true,
+			errContains: "same number of entries",
+		},
+		{
+			name:        "more package types than inputs - error",
+			mapIn:       "(.*)",
+			mapOut:      "release/$1",
+			mapType:     "maven;npm",
+			expectError: true,
+			errContains: "more entries",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := &components.Context{}
+			if tt.mapIn != "" {
+				ctx.AddStringFlag(commands.MapInFlag, tt.mapIn)
+			}
+			if tt.mapOut != "" {
+				ctx.AddStringFlag(commands.MapOutFlag, tt.mapOut)
+			}
+			if tt.mapType != "" {
+				ctx.AddStringFlag(commands.MapTypeFlag, tt.mapType)
+			}
+
+			result, err := ParsePathMappings(ctx)
+
+			if tt.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errContains)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

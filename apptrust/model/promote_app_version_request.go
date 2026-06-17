@@ -28,12 +28,23 @@ var OverwriteStrategyValues = []string{
 	OverwriteStrategyAll,
 }
 
+type PromotionPathMapping struct {
+	PackageType string `json:"package_type,omitempty"`
+	Input       string `json:"input"`
+	Output      string `json:"output"`
+}
+
+type PromotionModifications struct {
+	Mappings []PromotionPathMapping `json:"mappings"`
+}
+
 type CommonPromoteAppVersion struct {
-	PromotionType                string             `json:"promotion_type,omitempty"`
-	IncludedRepositoryKeys       []string           `json:"included_repository_keys,omitempty"`
-	ExcludedRepositoryKeys       []string           `json:"excluded_repository_keys,omitempty"`
-	ArtifactAdditionalProperties []ArtifactProperty `json:"artifact_additional_properties,omitempty"`
-	OverwriteStrategy            string             `json:"overwrite_strategy,omitempty"`
+	PromotionType                string                  `json:"promotion_type,omitempty"`
+	IncludedRepositoryKeys       []string                `json:"included_repository_keys,omitempty"`
+	ExcludedRepositoryKeys       []string                `json:"excluded_repository_keys,omitempty"`
+	ArtifactAdditionalProperties []ArtifactProperty      `json:"artifact_additional_properties,omitempty"`
+	OverwriteStrategy            string                  `json:"overwrite_strategy,omitempty"`
+	Modifications                *PromotionModifications `json:"modifications,omitempty"`
 }
 
 type ArtifactProperty struct {

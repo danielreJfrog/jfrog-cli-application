@@ -109,6 +109,11 @@ func (pv *promoteAppVersionCommand) buildRequestPayload(ctx *components.Context)
 		return nil, err
 	}
 
+	modifications, err := ParsePathMappings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &model.PromoteAppVersionRequest{
 		Stage: stage,
 		CommonPromoteAppVersion: model.CommonPromoteAppVersion{
@@ -117,6 +122,7 @@ func (pv *promoteAppVersionCommand) buildRequestPayload(ctx *components.Context)
 			ExcludedRepositoryKeys:       excludedRepos,
 			ArtifactAdditionalProperties: artifactProps,
 			OverwriteStrategy:            overwriteStrategy,
+			Modifications:                modifications,
 		},
 	}, nil
 }

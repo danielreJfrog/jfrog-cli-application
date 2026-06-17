@@ -1,6 +1,7 @@
 package version
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/jfrog/jfrog-cli-application/apptrust/commands"
@@ -74,4 +75,65 @@ func ParseOverwriteStrategy(ctx *components.Context) (string, error) {
 
 	// Convert to uppercase for API request
 	return strings.ToUpper(validatedStrategy), nil
+}
+
+// ParsePathMappings extracts path mapping rules from --map-in, --map-out, and --map-type flags.
+// Returns nil if no mapping flags are provided.
+func ParsePathMappings(ctx *components.Context) (*model.PromotionModifications, error) {
+	mapInStr := ctx.GetStringFlagValue(commands.MapInFlag)
+	mapOutStr := ctx.GetStringFlagValue(commands.MapOutFlag)
+
+	if mapInStr == "" && mapOutStr == "" {
+		return nil, nil
+	}
+
+	if mapInStr == "" || mapOutStr == "" {
+		return nil, errorutils.CheckErrorf("both --%s and --%s must be provided together", commands.MapInFlag, commands.MapOutFlag)
+	}
+
+	inputs := utils.ParseSliceFlag(mapInStr)
+	outputs := utils.ParseSliceFlag(mapOutStr)
+
+	if len(inputs) != len(outputs) {
+		return nil, errorutils.CheckErrorf("--%s and --%s must have the same number of entries (got %d and %d)",
+			commands.MapInFlag, commands.MapOutFlag, len(inputs), len(outputs))
+	}
+
+	var packageTypes []string
+	if mapTypeStr := ctx.GetStringFlagValue(commands.MapTypeFlag); mapTypeStr != "" {
+		packageTypes = utils.ParseSliceFlag(mapTypeStr)
+		if len(packageTypes) > len(inputs) {
+			return nil, errorutils.CheckErrorf("--%s has more entries (%d) than --%s (%d)",
+				commands.MapTypeFlag, len(packageTypes), commands.MapInFlag, len(inputs))
+		}
+	}
+
+	mappings := make([]model.PromotionPathMapping, len(inputs))
+	for i := range inputs {
+		mappings[i] = model.PromotionPathMapping{
+			Input:  inputs[i],
+			Output: outputs[i],
+		}
+		if i < len(packageTypes) {
+			mappings[i].PackageType = packageTypes[i]
+		}
+	}
+
+	return &model.PromotionModifications{Mappings: mappings}, nil
+}
+
+// BuildPathMappingsDescription returns a human-readable description of path mappings for logging.
+func BuildPathMappingsDescription(modifications *model.PromotionModifications) string {
+	if modifications == nil || len(modifications.Mappings) == 0 {
+		return ""
+	}
+	var parts []string
+	for _, m := range modifications.Mappings {
+		desc := fmt.Sprintf("%s → %s", m.Input, m.Output)
+		if m.PackageType != "" {
+			desc = fmt.Sprintf("[%s] %s", m.PackageType, desc)
+		}
+		parts = append(parts, desc)
+	}
+	return strings.Join(parts, "; ")
 }

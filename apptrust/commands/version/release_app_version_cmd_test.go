@@ -57,6 +57,7 @@ func TestReleaseAppVersionCommand_Run(t *testing.T) {
 				nil, // excludedRepos
 				nil, // artifactProps
 				tt.overwriteStrategy,
+				nil, // modifications
 			)
 
 			mockVersionService := mockversions.NewMockVersionService(ctrl)
@@ -91,6 +92,7 @@ func TestReleaseAppVersionCommand_Run_Error(t *testing.T) {
 		nil, // excludedRepos
 		nil, // artifactProps
 		"",  // overwriteStrategy
+		nil, // modifications
 	)
 	expectedError := errors.New("service error occurred")
 

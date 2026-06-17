@@ -61,6 +61,9 @@ const (
 	DeletePropertiesFlag              = "delete-properties"
 	IncludeFilterFlag                 = "include-filter"
 	ExcludeFilterFlag                 = "exclude-filter"
+	MapInFlag                         = "map-in"
+	MapOutFlag                        = "map-out"
+	MapTypeFlag                       = "map-type"
 )
 
 // Flag keys mapped to their corresponding components.Flag definition.
@@ -103,6 +106,9 @@ var flagsMap = map[string]components.Flag{
 	SourceTypeArtifactsFlag:           components.NewStringFlag(SourceTypeArtifactsFlag, "List of semicolon-separated (;) artifacts in the form of 'path=repo/path/to/artifact1[, sha256=hash1]; path=repo/path/to/artifact2[, sha256=hash2]' to be included in the new version.", func(f *components.StringFlag) { f.Mandatory = false }),
 	PropertiesFlag:                    components.NewStringFlag(PropertiesFlag, "Sets or updates custom properties for the application version in format 'key1=value1[,value2,...];key2=value3[,value4,...]'", func(f *components.StringFlag) { f.Mandatory = false }),
 	DeletePropertiesFlag:              components.NewStringFlag(DeletePropertiesFlag, "Remove a property key and all its values", func(f *components.StringFlag) { f.Mandatory = false }),
+	MapInFlag:                         components.NewStringFlag(MapInFlag, "Semicolon-separated list of regex patterns for path mapping input. Each entry corresponds to a mapping rule.", func(f *components.StringFlag) { f.Mandatory = false }),
+	MapOutFlag:                        components.NewStringFlag(MapOutFlag, "Semicolon-separated list of output path templates for path mapping. Supports regex group references (e.g. $1). Must match the number of --map-in entries.", func(f *components.StringFlag) { f.Mandatory = false }),
+	MapTypeFlag:                       components.NewStringFlag(MapTypeFlag, "Semicolon-separated list of package type regex filters for path mapping. If fewer entries than --map-in, remaining mappings apply to all types.", func(f *components.StringFlag) { f.Mandatory = false }),
 }
 
 var commandFlags = map[string][]string{
@@ -137,6 +143,9 @@ var commandFlags = map[string][]string{
 		IncludeReposFlag,
 		PropsFlag,
 		OverwriteStrategyFlag,
+		MapInFlag,
+		MapOutFlag,
+		MapTypeFlag,
 	},
 	VersionRelease: {
 		url,
@@ -149,6 +158,9 @@ var commandFlags = map[string][]string{
 		IncludeReposFlag,
 		PropsFlag,
 		OverwriteStrategyFlag,
+		MapInFlag,
+		MapOutFlag,
+		MapTypeFlag,
 	},
 	VersionDelete: {
 		url,

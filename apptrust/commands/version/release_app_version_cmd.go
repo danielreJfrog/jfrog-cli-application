@@ -106,12 +106,18 @@ func (rv *releaseAppVersionCommand) buildRequestPayload(ctx *components.Context)
 		return nil, err
 	}
 
+	modifications, err := ParsePathMappings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return model.NewReleaseAppVersionRequest(
 		promotionType,
 		includedRepos,
 		excludedRepos,
 		artifactProps,
 		overwriteStrategy,
+		modifications,
 	), nil
 }
 
