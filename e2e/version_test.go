@@ -394,7 +394,7 @@ func TestPromoteVersion_WithPathMappings(t *testing.T) {
 	// Execute - promote with path mapping flags
 	targetStage := "DEV"
 	err = utils.AppTrustCli.Exec("version-promote", appKey, version, targetStage,
-		`--map-in=(.*)`, `--map-out=promoted/$1`, `--map-type=.*`)
+		`--path-mapping=input=(.*), output=promoted/$1, package-type=.*`)
 	require.NoError(t, err)
 
 	// Assert - promotion succeeded with mappings applied
@@ -423,10 +423,9 @@ func TestPromoteVersion_WithPathMappings_InvalidRegex(t *testing.T) {
 	require.NoError(t, err)
 	defer utils.DeleteApplicationVersion(t, appKey, version)
 
-	// Execute - promote with invalid regex in --map-in
 	targetStage := "DEV"
 	err = utils.AppTrustCli.Exec("version-promote", appKey, version, targetStage,
-		`--map-in=[unclosed`, `--map-out=target/$1`)
+		`--path-mapping=input=[unclosed, output=target/$1`)
 	assert.Error(t, err)
 }
 

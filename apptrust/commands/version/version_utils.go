@@ -76,64 +76,53 @@ func ParseOverwriteStrategy(ctx *components.Context) (string, error) {
 	return strings.ToUpper(validatedStrategy), nil
 }
 
-// ParsePathMappings extracts path mapping rules from --map-in, --map-out, and --map-type flags.
-// Returns nil if no mapping flags are provided.
+// ParsePathMappings extracts path mapping rules from the --path-mapping flag.
+// Format: "input=(.*), output=stable-release/$1[, package-type=.*]; input=(...), output=..."
+// Returns nil if flag is not provided.
 func ParsePathMappings(ctx *components.Context) (*model.PromotionModifications, error) {
-	mapInStr := ctx.GetStringFlagValue(commands.MapInFlag)
-	mapOutStr := ctx.GetStringFlagValue(commands.MapOutFlag)
-	mapTypeStr := ctx.GetStringFlagValue(commands.MapTypeFlag)
+	const (
+		inputField       = "input"
+		outputField      = "output"
+		packageTypeField = "package-type"
+	)
 
-	if mapInStr == "" && mapOutStr == "" && mapTypeStr == "" {
+	flagValue := ctx.GetStringFlagValue(commands.PathMappingFlag)
+	if flagValue == "" {
 		return nil, nil
 	}
 
-	if mapInStr == "" || mapOutStr == "" {
-		return nil, errorutils.CheckErrorf("--%s and --%s must be provided together (both are required for path mappings)",
-			commands.MapInFlag, commands.MapOutFlag)
-	}
+	entries := utils.ParseSliceFlag(flagValue)
+	var mappings []model.PromotionPathMapping
 
-	inputs := utils.ParseSliceFlag(mapInStr)
-	outputs := utils.ParseSliceFlag(mapOutStr)
+	for i, entry := range entries {
+		if entry == "" {
+			return nil, errorutils.CheckErrorf("--%s entry %d is empty", commands.PathMappingFlag, i+1)
+		}
 
-	for i, v := range inputs {
-		if v == "" {
-			return nil, errorutils.CheckErrorf("--%s entry %d is empty", commands.MapInFlag, i+1)
+		entryMap, err := utils.ParseKeyValueString(entry, ",")
+		if err != nil {
+			return nil, errorutils.CheckErrorf("--%s entry %d: %s", commands.PathMappingFlag, i+1, err.Error())
 		}
-	}
-	for i, v := range outputs {
-		if v == "" {
-			return nil, errorutils.CheckErrorf("--%s entry %d is empty", commands.MapOutFlag, i+1)
-		}
-	}
 
-	if len(inputs) != len(outputs) {
-		return nil, errorutils.CheckErrorf("--%s and --%s must have the same number of entries (got %d and %d)",
-			commands.MapInFlag, commands.MapOutFlag, len(inputs), len(outputs))
-	}
+		input, hasInput := entryMap[inputField]
+		output, hasOutput := entryMap[outputField]
 
-	var packageTypes []string
-	if mapTypeStr != "" {
-		packageTypes = utils.ParseSliceFlag(mapTypeStr)
-		for i, v := range packageTypes {
-			if v == "" {
-				return nil, errorutils.CheckErrorf("--%s entry %d is empty", commands.MapTypeFlag, i+1)
-			}
+		if !hasInput || input == "" {
+			return nil, errorutils.CheckErrorf("--%s entry %d: '%s' is required", commands.PathMappingFlag, i+1, inputField)
 		}
-		if len(packageTypes) > len(inputs) {
-			return nil, errorutils.CheckErrorf("--%s has more entries (%d) than --%s (%d)",
-				commands.MapTypeFlag, len(packageTypes), commands.MapInFlag, len(inputs))
+		if !hasOutput || output == "" {
+			return nil, errorutils.CheckErrorf("--%s entry %d: '%s' is required", commands.PathMappingFlag, i+1, outputField)
 		}
-	}
 
-	mappings := make([]model.PromotionPathMapping, len(inputs))
-	for i := range inputs {
-		mappings[i] = model.PromotionPathMapping{
-			Input:  inputs[i],
-			Output: outputs[i],
+		mapping := model.PromotionPathMapping{
+			Input:  input,
+			Output: output,
 		}
-		if i < len(packageTypes) {
-			mappings[i].PackageType = packageTypes[i]
+		if pt, ok := entryMap[packageTypeField]; ok {
+			mapping.PackageType = pt
 		}
+
+		mappings = append(mappings, mapping)
 	}
 
 	return &model.PromotionModifications{Mappings: mappings}, nil

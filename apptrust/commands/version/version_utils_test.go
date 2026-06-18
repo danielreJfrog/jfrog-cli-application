@@ -167,21 +167,18 @@ func TestBuildPromotionParams(t *testing.T) {
 func TestParsePathMappings(t *testing.T) {
 	tests := []struct {
 		name        string
-		mapIn       string
-		mapOut      string
-		mapType     string
+		flagValue   string
 		expected    *model.PromotionModifications
 		expectError bool
 		errContains string
 	}{
 		{
-			name:     "no flags - returns nil",
+			name:     "no flag - returns nil",
 			expected: nil,
 		},
 		{
-			name:   "single mapping without package type",
-			mapIn:  "(.*)",
-			mapOut: "stable-release/$1",
+			name:      "single mapping without package type",
+			flagValue: "input=(.*), output=stable-release/$1",
 			expected: &model.PromotionModifications{
 				Mappings: []model.PromotionPathMapping{
 					{Input: "(.*)", Output: "stable-release/$1"},
@@ -189,10 +186,8 @@ func TestParsePathMappings(t *testing.T) {
 			},
 		},
 		{
-			name:    "single mapping with package type",
-			mapIn:   "(.*)",
-			mapOut:  "stable-release/$1",
-			mapType: ".*",
+			name:      "single mapping with package type",
+			flagValue: "input=(.*), output=stable-release/$1, package-type=.*",
 			expected: &model.PromotionModifications{
 				Mappings: []model.PromotionPathMapping{
 					{PackageType: ".*", Input: "(.*)", Output: "stable-release/$1"},
@@ -200,10 +195,8 @@ func TestParsePathMappings(t *testing.T) {
 			},
 		},
 		{
-			name:    "multiple mappings",
-			mapIn:   "(.*);(.*\\.jar)",
-			mapOut:  "release/$1;jars/$1",
-			mapType: ".*;maven",
+			name:      "multiple mappings",
+			flagValue: "input=(.*), output=release/$1, package-type=.*; input=(.*\\.jar), output=jars/$1, package-type=maven",
 			expected: &model.PromotionModifications{
 				Mappings: []model.PromotionPathMapping{
 					{PackageType: ".*", Input: "(.*)", Output: "release/$1"},
@@ -212,85 +205,46 @@ func TestParsePathMappings(t *testing.T) {
 			},
 		},
 		{
-			name:    "fewer package types than inputs - partial assignment",
-			mapIn:   "(.*);(.*\\.jar)",
-			mapOut:  "release/$1;jars/$1",
-			mapType: "maven",
+			name:      "mapping without package-type field",
+			flagValue: "input=(.*), output=release/$1; input=(.*\\.jar), output=jars/$1",
 			expected: &model.PromotionModifications{
 				Mappings: []model.PromotionPathMapping{
-					{PackageType: "maven", Input: "(.*)", Output: "release/$1"},
+					{Input: "(.*)", Output: "release/$1"},
 					{Input: "(.*\\.jar)", Output: "jars/$1"},
 				},
 			},
 		},
 		{
-			name:        "map-in without map-out - error",
-			mapIn:       "(.*)",
+			name:        "missing input field - error",
+			flagValue:   "output=target/$1",
 			expectError: true,
-			errContains: "must be provided together",
+			errContains: "'input' is required",
 		},
 		{
-			name:        "map-out without map-in - error",
-			mapOut:      "target/$1",
+			name:        "missing output field - error",
+			flagValue:   "input=(.*)",
 			expectError: true,
-			errContains: "must be provided together",
+			errContains: "'output' is required",
 		},
 		{
-			name:        "mismatched count - error",
-			mapIn:       "(.*);(.*\\.jar)",
-			mapOut:      "release/$1",
-			expectError: true,
-			errContains: "same number of entries",
-		},
-		{
-			name:        "more package types than inputs - error",
-			mapIn:       "(.*)",
-			mapOut:      "release/$1",
-			mapType:     "maven;npm",
-			expectError: true,
-			errContains: "more entries",
-		},
-		{
-			name:        "map-type alone without map-in/map-out - error",
-			mapType:     "maven",
-			expectError: true,
-			errContains: "must be provided together",
-		},
-		{
-			name:        "trailing semicolon in map-in produces empty entry - error",
-			mapIn:       "(.*);",
-			mapOut:      "release/$1;target/$1",
+			name:        "empty entry from trailing semicolon - error",
+			flagValue:   "input=(.*), output=release/$1;",
 			expectError: true,
 			errContains: "entry 2 is empty",
 		},
 		{
-			name:        "trailing semicolon in map-out produces empty entry - error",
-			mapIn:       "(.*);(.*\\.jar)",
-			mapOut:      "release/$1;",
+			name:        "invalid key-value format - error",
+			flagValue:   "not-a-valid-format",
 			expectError: true,
-			errContains: "entry 2 is empty",
-		},
-		{
-			name:        "empty map-type entry - error",
-			mapIn:       "(.*)",
-			mapOut:      "release/$1",
-			mapType:     ";",
-			expectError: true,
-			errContains: "entry 1 is empty",
+			errContains: "entry 1",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := &components.Context{}
-			if tt.mapIn != "" {
-				ctx.AddStringFlag(commands.MapInFlag, tt.mapIn)
-			}
-			if tt.mapOut != "" {
-				ctx.AddStringFlag(commands.MapOutFlag, tt.mapOut)
-			}
-			if tt.mapType != "" {
-				ctx.AddStringFlag(commands.MapTypeFlag, tt.mapType)
+			if tt.flagValue != "" {
+				ctx.AddStringFlag(commands.PathMappingFlag, tt.flagValue)
 			}
 
 			result, err := ParsePathMappings(ctx)
