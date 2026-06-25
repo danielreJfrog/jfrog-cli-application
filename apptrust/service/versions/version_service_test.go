@@ -101,13 +101,57 @@ func TestCreateAppVersion(t *testing.T) {
 			mockCtx := mockservice.NewMockContext(ctrl)
 			mockCtx.EXPECT().GetHttpClient().Return(mockHttpClient).Times(1)
 
-			_, err := service.CreateAppVersion(mockCtx, tt.request, tt.sync, tt.dryRun)
+			_, err := service.CreateAppVersion(mockCtx, tt.request, tt.sync, tt.dryRun, "")
 			if tt.expectedError == "" {
 				assert.NoError(t, err)
 			} else {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.expectedError)
 			}
+		})
+	}
+}
+
+func TestCreateAppVersionWithConflictResolution(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	service := NewVersionService()
+
+	tests := []struct {
+		name               string
+		conflictResolution string
+		expectedParams     map[string]string
+	}{
+		{
+			name:               "automatic",
+			conflictResolution: "automatic",
+			expectedParams:     map[string]string{"async": "false", "dry_run": "false", "conflict_resolution": "automatic"},
+		},
+		{
+			name:               "manual",
+			conflictResolution: "manual",
+			expectedParams:     map[string]string{"async": "false", "dry_run": "false", "conflict_resolution": "manual"},
+		},
+		{
+			name:               "empty (omitted)",
+			conflictResolution: "",
+			expectedParams:     map[string]string{"async": "false", "dry_run": "false"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request := &model.CreateAppVersionRequest{ApplicationKey: "test-app", Version: "1.0.0"}
+			mockHttpClient := mockhttp.NewMockApptrustHttpClient(ctrl)
+			mockHttpClient.EXPECT().Post("/v1/applications/test-app/versions/", request, tt.expectedParams).
+				Return(&http.Response{StatusCode: 201}, []byte("{}"), nil).Times(1)
+
+			mockCtx := mockservice.NewMockContext(ctrl)
+			mockCtx.EXPECT().GetHttpClient().Return(mockHttpClient).Times(1)
+
+			_, err := service.CreateAppVersion(mockCtx, request, true, false, tt.conflictResolution)
+			assert.NoError(t, err)
 		})
 	}
 }

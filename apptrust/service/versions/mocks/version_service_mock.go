@@ -42,18 +42,18 @@ func (m *MockVersionService) EXPECT() *MockVersionServiceMockRecorder {
 }
 
 // CreateAppVersion mocks base method.
-func (m *MockVersionService) CreateAppVersion(ctx service.Context, request *model.CreateAppVersionRequest, sync, dryRun bool) ([]byte, error) {
+func (m *MockVersionService) CreateAppVersion(ctx service.Context, request *model.CreateAppVersionRequest, sync, dryRun bool, conflictResolution string) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAppVersion", ctx, request, sync, dryRun)
+	ret := m.ctrl.Call(m, "CreateAppVersion", ctx, request, sync, dryRun, conflictResolution)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAppVersion indicates an expected call of CreateAppVersion.
-func (mr *MockVersionServiceMockRecorder) CreateAppVersion(ctx, request, sync, dryRun any) *gomock.Call {
+func (mr *MockVersionServiceMockRecorder) CreateAppVersion(ctx, request, sync, dryRun, conflictResolution any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockVersionService)(nil).CreateAppVersion), ctx, request, sync, dryRun)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockVersionService)(nil).CreateAppVersion), ctx, request, sync, dryRun, conflictResolution)
 }
 
 // DeleteAppVersion mocks base method.

@@ -15,7 +15,7 @@ import (
 )
 
 type VersionService interface {
-	CreateAppVersion(ctx service.Context, request *model.CreateAppVersionRequest, sync, dryRun bool) ([]byte, error)
+	CreateAppVersion(ctx service.Context, request *model.CreateAppVersionRequest, sync, dryRun bool, conflictResolution string) ([]byte, error)
 	PromoteAppVersion(ctx service.Context, applicationKey string, version string, payload *model.PromoteAppVersionRequest, sync bool) ([]byte, error)
 	ReleaseAppVersion(ctx service.Context, applicationKey string, version string, request *model.ReleaseAppVersionRequest, sync bool) ([]byte, error)
 	RollbackAppVersion(ctx service.Context, applicationKey string, version string, request *model.RollbackAppVersionRequest, sync bool) ([]byte, error)
@@ -30,10 +30,16 @@ func NewVersionService() VersionService {
 	return &versionService{}
 }
 
-func (vs *versionService) CreateAppVersion(ctx service.Context, request *model.CreateAppVersionRequest, sync, dryRun bool) ([]byte, error) {
+func (vs *versionService) CreateAppVersion(ctx service.Context, request *model.CreateAppVersionRequest, sync, dryRun bool, conflictResolution string) ([]byte, error) {
 	endpoint := fmt.Sprintf("/v1/applications/%s/versions/", request.ApplicationKey)
-	response, responseBody, err := ctx.GetHttpClient().Post(endpoint, request,
-		map[string]string{"async": strconv.FormatBool(!sync), "dry_run": strconv.FormatBool(dryRun)})
+	params := map[string]string{
+		"async":   strconv.FormatBool(!sync),
+		"dry_run": strconv.FormatBool(dryRun),
+	}
+	if conflictResolution != "" {
+		params["conflict_resolution"] = conflictResolution
+	}
+	response, responseBody, err := ctx.GetHttpClient().Post(endpoint, request, params)
 	if err != nil {
 		return nil, err
 	}
