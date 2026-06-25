@@ -282,6 +282,62 @@ func TestCreateVersion_Async(t *testing.T) {
 	assert.Contains(t, []string{utils.StatusInProgress, utils.StatusStarted}, response.Status)
 }
 
+func TestCreateVersion_ConflictResolution_Automatic(t *testing.T) {
+	t.Skip("Skipping: conflict_resolution support requires a platform version not yet released")
+	appKey := utils.GenerateUniqueKey("app-cr-auto")
+	utils.CreateBasicApplication(t, appKey)
+	defer utils.DeleteApplication(t, appKey)
+
+	testPackage := utils.GetTestPackage(t)
+	version := "1.0.0"
+
+	packageFlag := fmt.Sprintf("--source-type-packages=type=%s, name=%s, version=%s, repo-key=%s",
+		testPackage.PackageType, testPackage.PackageName, testPackage.PackageVersion, testPackage.RepoKey)
+	err := utils.AppTrustCli.Exec("version-create", appKey, version, packageFlag, "--conflict-resolution=automatic")
+	require.NoError(t, err)
+	defer utils.DeleteApplicationVersion(t, appKey, version)
+
+	versionContent, statusCode, err := utils.GetApplicationVersion(appKey, version)
+	require.NoError(t, err)
+	assertVersionContent(t, testPackage, versionContent, statusCode, appKey, version)
+}
+
+func TestCreateVersion_ConflictResolution_Manual(t *testing.T) {
+	t.Skip("Skipping: conflict_resolution support requires a platform version not yet released")
+	appKey := utils.GenerateUniqueKey("app-cr-manual")
+	utils.CreateBasicApplication(t, appKey)
+	defer utils.DeleteApplication(t, appKey)
+
+	testPackage := utils.GetTestPackage(t)
+	version := "1.0.0"
+
+	packageFlag := fmt.Sprintf("--source-type-packages=type=%s, name=%s, version=%s, repo-key=%s",
+		testPackage.PackageType, testPackage.PackageName, testPackage.PackageVersion, testPackage.RepoKey)
+	err := utils.AppTrustCli.Exec("version-create", appKey, version, packageFlag, "--conflict-resolution=manual")
+	require.NoError(t, err)
+	defer utils.DeleteApplicationVersion(t, appKey, version)
+
+	versionContent, statusCode, err := utils.GetApplicationVersion(appKey, version)
+	require.NoError(t, err)
+	assertVersionContent(t, testPackage, versionContent, statusCode, appKey, version)
+}
+
+func TestCreateVersion_ConflictResolution_Invalid(t *testing.T) {
+	t.Skip("Skipping: conflict_resolution support requires a platform version not yet released")
+	appKey := utils.GenerateUniqueKey("app-cr-invalid")
+	utils.CreateBasicApplication(t, appKey)
+	defer utils.DeleteApplication(t, appKey)
+
+	testPackage := utils.GetTestPackage(t)
+	version := "1.0.0"
+
+	packageFlag := fmt.Sprintf("--source-type-packages=type=%s, name=%s, version=%s, repo-key=%s",
+		testPackage.PackageType, testPackage.PackageName, testPackage.PackageVersion, testPackage.RepoKey)
+	err := utils.AppTrustCli.Exec("version-create", appKey, version, packageFlag, "--conflict-resolution=bogus")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "400")
+}
+
 func assertVersionContent(t *testing.T, expectedPackage *utils.TestPackageResources, versionContent *utils.VersionContentResponse, statusCode int, appKey, appVersion string) {
 	assert.Equal(t, http.StatusOK, statusCode)
 	require.NotNil(t, versionContent)
