@@ -76,6 +76,16 @@ func ParseOverwriteStrategy(ctx *components.Context) (string, error) {
 	return strings.ToUpper(validatedStrategy), nil
 }
 
+// ParseConflictResolution extracts and validates the conflict resolution strategy from command context
+func ParseConflictResolution(ctx *components.Context) (string, error) {
+	conflictResolution := ctx.GetStringFlagValue(commands.ConflictResolutionFlag)
+	if conflictResolution == "" {
+		return "", nil
+	}
+
+	return utils.ValidateEnumFlag(commands.ConflictResolutionFlag, conflictResolution, "", model.ConflictResolutionValues)
+}
+
 // ParsePathMappings extracts path mapping rules from the --path-mapping flag.
 // Format: "input=(.*), output=stable-release/$1[, package-type=.*]; input=(...), output=..."
 // Returns nil if flag is not provided.

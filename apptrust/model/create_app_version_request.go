@@ -1,5 +1,15 @@
 package model
 
+const (
+	ConflictResolutionAutomatic = "automatic"
+	ConflictResolutionManual    = "manual"
+)
+
+var ConflictResolutionValues = []string{
+	ConflictResolutionAutomatic,
+	ConflictResolutionManual,
+}
+
 type CreateAppVersionRequest struct {
 	ApplicationKey string                `json:"application_key"`
 	Version        string                `json:"version"`

@@ -73,6 +73,60 @@ func TestParseOverwriteStrategy(t *testing.T) {
 	}
 }
 
+func TestParseConflictResolution(t *testing.T) {
+	tests := []struct {
+		name          string
+		flagValue     string
+		expectError   bool
+		expectedValue string
+	}{
+		{
+			name:          "valid value - automatic",
+			flagValue:     "automatic",
+			expectedValue: "automatic",
+		},
+		{
+			name:          "valid value - manual",
+			flagValue:     "manual",
+			expectedValue: "manual",
+		},
+		{
+			name:          "empty value (omitted)",
+			flagValue:     "",
+			expectedValue: "",
+		},
+		{
+			name:        "invalid value",
+			flagValue:   "invalid",
+			expectError: true,
+		},
+		{
+			name:        "uppercase value",
+			flagValue:   "AUTOMATIC",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := &components.Context{}
+			if tt.flagValue != "" {
+				ctx.AddStringFlag(commands.ConflictResolutionFlag, tt.flagValue)
+			}
+
+			result, err := ParseConflictResolution(ctx)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedValue, result)
+		})
+	}
+}
+
 func TestBuildPromotionParams(t *testing.T) {
 	tests := []struct {
 		name                  string

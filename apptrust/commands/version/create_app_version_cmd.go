@@ -62,7 +62,10 @@ func (cv *createAppVersionCommand) prepareAndRunCommand(ctx *components.Context)
 		return err
 	}
 	cv.dryRun = ctx.GetBoolFlagValue(commands.DryRunFlag)
-	cv.conflictResolution = ctx.GetStringFlagValue(commands.ConflictResolutionFlag)
+	cv.conflictResolution, err = ParseConflictResolution(ctx)
+	if err != nil {
+		return err
+	}
 
 	outputFormat, err := ctx.GetOutputFormat()
 	if err != nil {
@@ -124,7 +127,6 @@ Common patterns:
   $ jf apptrust version-create my-app 1.0.0 --source-type-packages="type=docker, name=my-image, version=1.0.0, repo-key=docker-local"
   $ jf apptrust version-create my-app 1.0.0 --spec=version-spec.json --spec-vars="BUILD=42"
   $ jf apptrust version-create my-app 1.0.0 --source-type-builds="name=b, id=1" --draft --dry-run
-  $ jf apptrust version-create my-app 1.0.0 --source-type-builds="name=b, id=1" --conflict-resolution=automatic
 
 Gotchas:
 - The version should follow SemVer convention (e.g. 1.0.0, 1.2.3-rc1); the CLI does not validate the format, but the platform may reject non-conforming values.
