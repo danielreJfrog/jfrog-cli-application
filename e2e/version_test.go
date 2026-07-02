@@ -335,7 +335,7 @@ func TestCreateVersion_ConflictResolution_Invalid(t *testing.T) {
 		testPackage.PackageType, testPackage.PackageName, testPackage.PackageVersion, testPackage.RepoKey)
 	err := utils.AppTrustCli.Exec("version-create", appKey, version, packageFlag, "--conflict-resolution=bogus")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "400")
+	assert.Contains(t, err.Error(), "invalid value for --conflict-resolution")
 }
 
 func assertVersionContent(t *testing.T, expectedPackage *utils.TestPackageResources, versionContent *utils.VersionContentResponse, statusCode int, appKey, appVersion string) {
