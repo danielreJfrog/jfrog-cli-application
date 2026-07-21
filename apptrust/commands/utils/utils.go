@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/jfrog/jfrog-cli-application/apptrust/model"
@@ -166,6 +167,50 @@ func ParseListPropertiesFlag(propertiesStr string) (map[string][]string, error) 
 	}
 
 	return result, nil
+}
+
+func ParseMonitorPolicyFlag(flagValue string) (*model.MonitorPolicy, error) {
+	fields, err := ParseKeyValueString(flagValue, ",")
+	if err != nil {
+		return nil, err
+	}
+
+	for key := range fields {
+		if key != "type" && key != "value" {
+			return nil, errorutils.CheckErrorf("invalid field '%s' (supported fields: type, value)", key)
+		}
+	}
+
+	policyType, typeSet := fields["type"]
+	if !typeSet {
+		return nil, errorutils.CheckErrorf("missing required 'type' field")
+	}
+	if !slices.Contains(model.MonitorPolicyTypeValues, policyType) {
+		return nil, errorutils.CheckErrorf("invalid type '%s' (supported types: %s)", policyType, coreutils.ListToText(model.MonitorPolicyTypeValues))
+	}
+
+	valueStr, valueSet := fields["value"]
+	isNone := policyType == model.MonitorPolicyTypeNone
+	if isNone && valueSet {
+		return nil, errorutils.CheckErrorf("'value' must not be set when type is '%s'", model.MonitorPolicyTypeNone)
+	}
+	if !isNone && !valueSet {
+		return nil, errorutils.CheckErrorf("'value' is required when type is '%s'", policyType)
+	}
+
+	policy := &model.MonitorPolicy{Type: policyType}
+	if valueSet {
+		value, err := strconv.Atoi(valueStr)
+		if err != nil {
+			return nil, errorutils.CheckErrorf("'value' must be an integer: %s", err.Error())
+		}
+		if value <= 0 {
+			return nil, errorutils.CheckErrorf("'value' must be a positive integer")
+		}
+		policy.Value = &value
+	}
+
+	return policy, nil
 }
 
 func ParseLabelKeyValuePairs(flagValue string) ([]model.LabelEntry, error) {

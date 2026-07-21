@@ -284,7 +284,7 @@ func TestUpdateAppCommand_FlagsSuite(t *testing.T) {
 				ctx.AddStringFlag(commands.MonitorPolicyFlag, "type=bogus, value=5")
 			},
 			expectsError:  true,
-			errorContains: "invalid value for --monitor-policy",
+			errorContains: "invalid type 'bogus'",
 		},
 		{
 			name: "invalid add-labels format - missing equals",

@@ -45,9 +45,6 @@ type LabelEntry struct {
 	Value string `json:"value"`
 }
 
-// MonitorPolicy is the operational-validity monitoring configuration for an application.
-// Type is "none" to disable monitoring, or one of "time_frame_in_months" / "version_count".
-// Value is required for the enabled types and must be empty for "none".
 type MonitorPolicy struct {
 	Type  string `json:"type"`
 	Value *int   `json:"value,omitempty"`

@@ -104,13 +104,13 @@ func TestCreateAppCommand_Run_MonitorPolicy(t *testing.T) {
 			name:          "missing type",
 			monitorPolicy: "value=5",
 			expectsError:  true,
-			errorContains: "requires a 'type' field",
+			errorContains: "missing required 'type' field",
 		},
 		{
 			name:          "invalid type",
 			monitorPolicy: "type=bogus, value=5",
 			expectsError:  true,
-			errorContains: "invalid value for --monitor-policy",
+			errorContains: "invalid type 'bogus'",
 		},
 		{
 			name:          "non-integer value",
