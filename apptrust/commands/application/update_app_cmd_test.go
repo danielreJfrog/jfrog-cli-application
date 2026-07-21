@@ -256,6 +256,37 @@ func TestUpdateAppCommand_FlagsSuite(t *testing.T) {
 			},
 		},
 		{
+			name: "monitor-policy with value",
+			ctxSetup: func(ctx *components.Context) {
+				ctx.Arguments = []string{"app-key"}
+				ctx.AddStringFlag(commands.MonitorPolicyFlag, "type=version_count, value=5")
+			},
+			expectsPayload: &model.AppDescriptor{
+				ApplicationKey: "app-key",
+				MonitorPolicy:  &model.MonitorPolicy{Type: "version_count", Value: intPtr(5)},
+			},
+		},
+		{
+			name: "monitor-policy none disables monitoring",
+			ctxSetup: func(ctx *components.Context) {
+				ctx.Arguments = []string{"app-key"}
+				ctx.AddStringFlag(commands.MonitorPolicyFlag, "type=none")
+			},
+			expectsPayload: &model.AppDescriptor{
+				ApplicationKey: "app-key",
+				MonitorPolicy:  &model.MonitorPolicy{Type: "none"},
+			},
+		},
+		{
+			name: "invalid monitor-policy type",
+			ctxSetup: func(ctx *components.Context) {
+				ctx.Arguments = []string{"app-key"}
+				ctx.AddStringFlag(commands.MonitorPolicyFlag, "type=bogus, value=5")
+			},
+			expectsError:  true,
+			errorContains: "invalid value for --monitor-policy",
+		},
+		{
 			name: "invalid add-labels format - missing equals",
 			ctxSetup: func(ctx *components.Context) {
 				ctx.Arguments = []string{"app-key"}
@@ -364,4 +395,8 @@ func TestUpdateAppCommand_FlagsSuite(t *testing.T) {
 
 func stringPtr(s string) *string {
 	return &s
+}
+
+func intPtr(i int) *int {
+	return &i
 }

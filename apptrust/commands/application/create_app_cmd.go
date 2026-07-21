@@ -164,6 +164,7 @@ func validateNoSpecAndFlagsTogether(ctx *components.Context) error {
 			commands.LabelsFlag,
 			commands.UserOwnersFlag,
 			commands.GroupOwnersFlag,
+			commands.MonitorPolicyFlag,
 		}
 		for _, flag := range otherAppFlags {
 			if ctx.IsFlagSet(flag) {
@@ -197,12 +198,14 @@ Common patterns:
   $ jf apptrust app-create my-app --project=default --application-name="My App" --desc="Service X"
   $ jf apptrust app-create my-app --project=default --business-criticality=high --maturity-level=production
   $ jf apptrust app-create my-app --project=default --labels="team=core;area=platform" --user-owners="alice;bob"
+  $ jf apptrust app-create my-app --project=default --monitor-policy="type=version_count, value=5"
   $ jf apptrust app-create my-app --spec=app-spec.json --spec-vars="ENV=prod"
 
 Gotchas:
-- --spec is mutually exclusive with --application-name, --project, --desc, --business-criticality, --maturity-level, --labels, --user-owners, --group-owners.
+- --spec is mutually exclusive with --application-name, --project, --desc, --business-criticality, --maturity-level, --labels, --user-owners, --group-owners, --monitor-policy.
 - If --application-name is omitted, the application-key is used as the display name.
 - --labels uses semicolon separators (not commas) and key=value pairs.
+- --monitor-policy takes 'type=<type>[, value=<n>]'. 'value' is required (positive integer) when type is "time_frame_in_months" or "version_count", and must be omitted when type is "none".
 
 Related: jf apptrust app-update, jf apptrust app-delete, jf apptrust version-create`,
 		Category:         common.CategoryApplication,

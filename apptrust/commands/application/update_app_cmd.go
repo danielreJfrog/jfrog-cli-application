@@ -109,10 +109,12 @@ Common patterns:
   $ jf apptrust app-update my-app --add-labels="env=prod;tier=critical"
   $ jf apptrust app-update my-app --remove-labels="env=staging"
   $ jf apptrust app-update my-app --user-owners="alice;bob" --group-owners="platform-team"
+  $ jf apptrust app-update my-app --monitor-policy="type=version_count, value=5"
 
 Gotchas:
 - --labels replaces the full label set; --add-labels and --remove-labels modify incrementally.
 - --user-owners / --group-owners take a semicolon-separated list and send exactly the owners you specify; there are no incremental add/remove-owner flags (unlike --add-labels / --remove-labels for labels).
+- --monitor-policy takes 'type=<type>[, value=<n>]'. 'value' is required (positive integer) when type is "time_frame_in_months" or "version_count", and must be omitted when type is "none". When --monitor-policy is not provided, the current policy is left unchanged.
 - Application key cannot be changed; use app-delete and app-create if you need a different key.
 
 Related: jf apptrust app-create, jf apptrust app-delete`,

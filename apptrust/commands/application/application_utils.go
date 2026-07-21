@@ -2,6 +2,7 @@ package application
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/jfrog/jfrog-cli-application/apptrust/commands"
 	"github.com/jfrog/jfrog-cli-application/apptrust/commands/utils"
@@ -84,5 +85,60 @@ func populateApplicationFromFlags(ctx *components.Context, descriptor *model.App
 		descriptor.GroupOwners = &groupOwners
 	}
 
+	if err := populateMonitorPolicyFromFlags(ctx, descriptor); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func populateMonitorPolicyFromFlags(ctx *components.Context, descriptor *model.AppDescriptor) error {
+	if !ctx.IsFlagSet(commands.MonitorPolicyFlag) {
+		return nil
+	}
+
+	fields, err := utils.ParseKeyValueString(ctx.GetStringFlagValue(commands.MonitorPolicyFlag), ",")
+	if err != nil {
+		return fmt.Errorf("failed to parse --%s: %w", commands.MonitorPolicyFlag, err)
+	}
+
+	for key := range fields {
+		if key != "type" && key != "value" {
+			return fmt.Errorf("invalid field '%s' in --%s (supported fields: type, value)", key, commands.MonitorPolicyFlag)
+		}
+	}
+
+	typeStr, typeSet := fields["type"]
+	if !typeSet {
+		return fmt.Errorf("--%s requires a 'type' field", commands.MonitorPolicyFlag)
+	}
+
+	policyType, err := utils.ValidateEnumFlag(commands.MonitorPolicyFlag, typeStr, model.MonitorPolicyTypeNone, model.MonitorPolicyTypeValues)
+	if err != nil {
+		return err
+	}
+
+	policy := &model.MonitorPolicy{Type: policyType}
+	valueStr, valueSet := fields["value"]
+
+	if policyType == model.MonitorPolicyTypeNone {
+		if valueSet {
+			return fmt.Errorf("'value' must not be set in --%s when type is '%s'", commands.MonitorPolicyFlag, model.MonitorPolicyTypeNone)
+		}
+	} else {
+		if !valueSet {
+			return fmt.Errorf("'value' is required in --%s when type is '%s'", commands.MonitorPolicyFlag, policyType)
+		}
+		value, err := strconv.Atoi(valueStr)
+		if err != nil {
+			return fmt.Errorf("'value' in --%s must be an integer: %w", commands.MonitorPolicyFlag, err)
+		}
+		if value <= 0 {
+			return fmt.Errorf("'value' in --%s must be a positive integer", commands.MonitorPolicyFlag)
+		}
+		policy.Value = &value
+	}
+
+	descriptor.MonitorPolicy = policy
 	return nil
 }

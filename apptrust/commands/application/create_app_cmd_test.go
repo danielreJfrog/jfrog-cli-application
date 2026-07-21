@@ -63,6 +63,113 @@ func TestCreateAppCommand_Run_Flags(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestCreateAppCommand_Run_MonitorPolicy(t *testing.T) {
+	versionCountValue := 5
+
+	tests := []struct {
+		name           string
+		monitorPolicy  string
+		expectsError   bool
+		errorContains  string
+		expectedPolicy *model.MonitorPolicy
+	}{
+		{
+			name:           "version count",
+			monitorPolicy:  "type=version_count, value=5",
+			expectedPolicy: &model.MonitorPolicy{Type: "version_count", Value: &versionCountValue},
+		},
+		{
+			name:           "time frame in months",
+			monitorPolicy:  "type=time_frame_in_months, value=5",
+			expectedPolicy: &model.MonitorPolicy{Type: "time_frame_in_months", Value: &versionCountValue},
+		},
+		{
+			name:           "none without value",
+			monitorPolicy:  "type=none",
+			expectedPolicy: &model.MonitorPolicy{Type: "none"},
+		},
+		{
+			name:          "none with value is rejected",
+			monitorPolicy: "type=none, value=5",
+			expectsError:  true,
+			errorContains: "'value' must not be set",
+		},
+		{
+			name:          "missing value for enabled type",
+			monitorPolicy: "type=version_count",
+			expectsError:  true,
+			errorContains: "'value' is required",
+		},
+		{
+			name:          "missing type",
+			monitorPolicy: "value=5",
+			expectsError:  true,
+			errorContains: "requires a 'type' field",
+		},
+		{
+			name:          "invalid type",
+			monitorPolicy: "type=bogus, value=5",
+			expectsError:  true,
+			errorContains: "invalid value for --monitor-policy",
+		},
+		{
+			name:          "non-integer value",
+			monitorPolicy: "type=version_count, value=abc",
+			expectsError:  true,
+			errorContains: "must be an integer",
+		},
+		{
+			name:          "non-positive value",
+			monitorPolicy: "type=version_count, value=0",
+			expectsError:  true,
+			errorContains: "must be a positive integer",
+		},
+		{
+			name:          "unknown field",
+			monitorPolicy: "type=version_count, value=5, foo=bar",
+			expectsError:  true,
+			errorContains: "invalid field 'foo'",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			ctx := &components.Context{
+				Arguments: []string{"app-key"},
+			}
+			ctx.AddStringFlag("project", "test-project")
+			ctx.AddStringFlag("url", "https://example.com")
+			ctx.AddStringFlag("monitor-policy", tt.monitorPolicy)
+
+			var actualPayload *model.AppDescriptor
+			mockAppService := mockapps.NewMockApplicationService(ctrl)
+			if !tt.expectsError {
+				mockAppService.EXPECT().CreateApplication(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ interface{}, req *model.AppDescriptor) ([]byte, error) {
+						actualPayload = req
+						return nil, nil
+					}).Times(1)
+			}
+
+			cmd := &createAppCommand{
+				applicationService: mockAppService,
+			}
+
+			err := cmd.prepareAndRunCommand(ctx)
+			if tt.expectsError {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorContains)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedPolicy, actualPayload.MonitorPolicy)
+			}
+		})
+	}
+}
+
 func TestCreateAppCommand_Error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
