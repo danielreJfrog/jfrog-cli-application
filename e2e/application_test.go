@@ -100,13 +100,13 @@ func TestCreateAppWithMonitorPolicy(t *testing.T) {
 			name:          "version count",
 			monitorPolicy: "type=version_count, value=5",
 			expectedType:  model.MonitorPolicyTypeVersionCount,
-			expectedValue: intPtr(5),
+			expectedValue: utils.IntPtr(5),
 		},
 		{
 			name:          "time frame in months",
 			monitorPolicy: "type=time_frame_in_months, value=3",
 			expectedType:  model.MonitorPolicyTypeTimeframe,
-			expectedValue: intPtr(3),
+			expectedValue: utils.IntPtr(3),
 		},
 	}
 
@@ -144,13 +144,13 @@ func TestUpdateAppMonitorPolicy(t *testing.T) {
 			name:          "time frame in months",
 			monitorPolicy: "type=time_frame_in_months, value=6",
 			expectedType:  model.MonitorPolicyTypeTimeframe,
-			expectedValue: intPtr(6),
+			expectedValue: utils.IntPtr(6),
 		},
 		{
 			name:          "version count",
 			monitorPolicy: "type=version_count, value=4",
 			expectedType:  model.MonitorPolicyTypeVersionCount,
-			expectedValue: intPtr(4),
+			expectedValue: utils.IntPtr(4),
 		},
 		{
 			name:          "none",
@@ -181,10 +181,6 @@ func TestUpdateAppMonitorPolicy(t *testing.T) {
 			utils.DeleteApplication(t, appKey)
 		})
 	}
-}
-
-func intPtr(i int) *int {
-	return &i
 }
 
 func TestDeleteApp(t *testing.T) {
