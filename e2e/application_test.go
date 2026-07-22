@@ -87,6 +87,106 @@ func TestUpdateApp(t *testing.T) {
 	utils.DeleteApplication(t, appKey)
 }
 
+func TestCreateAppWithMonitorPolicy(t *testing.T) {
+	projectKey := utils.GetTestProjectKey(t)
+
+	tests := []struct {
+		name          string
+		monitorPolicy string
+		expectedType  string
+		expectedValue *int
+	}{
+		{
+			name:          "version count",
+			monitorPolicy: "type=version_count, value=5",
+			expectedType:  model.MonitorPolicyTypeVersionCount,
+			expectedValue: intPtr(5),
+		},
+		{
+			name:          "time frame in months",
+			monitorPolicy: "type=time_frame_in_months, value=3",
+			expectedType:  model.MonitorPolicyTypeTimeframe,
+			expectedValue: intPtr(3),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			appKey := utils.GenerateUniqueKey("app-create-monitor-" + strings.ReplaceAll(tt.name, " ", "-"))
+
+			err := utils.AppTrustCli.Exec("app-create", appKey,
+				"--project="+projectKey,
+				"--application-name="+appKey,
+				"--monitor-policy="+tt.monitorPolicy)
+			assert.NoError(t, err)
+
+			app, _, err := utils.GetApplication(appKey)
+			assert.NoError(t, err)
+			assert.Equal(t, appKey, app.ApplicationKey)
+			if assert.NotNil(t, app.MonitorPolicy) {
+				assert.Equal(t, tt.expectedType, app.MonitorPolicy.Type)
+				assert.Equal(t, tt.expectedValue, app.MonitorPolicy.Value)
+			}
+
+			utils.DeleteApplication(t, appKey)
+		})
+	}
+}
+
+func TestUpdateAppMonitorPolicy(t *testing.T) {
+	tests := []struct {
+		name          string
+		monitorPolicy string
+		expectedType  string
+		expectedValue *int
+	}{
+		{
+			name:          "time frame in months",
+			monitorPolicy: "type=time_frame_in_months, value=6",
+			expectedType:  model.MonitorPolicyTypeTimeframe,
+			expectedValue: intPtr(6),
+		},
+		{
+			name:          "version count",
+			monitorPolicy: "type=version_count, value=4",
+			expectedType:  model.MonitorPolicyTypeVersionCount,
+			expectedValue: intPtr(4),
+		},
+		{
+			name:          "none",
+			monitorPolicy: "type=none",
+			expectedType:  model.MonitorPolicyTypeNone,
+			expectedValue: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			appKey := utils.GenerateUniqueKey("app-update-monitor-" + strings.ReplaceAll(tt.name, " ", "-"))
+
+			utils.CreateBasicApplication(t, appKey)
+
+			err := utils.AppTrustCli.Exec("app-update", appKey,
+				"--monitor-policy="+tt.monitorPolicy)
+			assert.NoError(t, err)
+
+			app, _, err := utils.GetApplication(appKey)
+			assert.NoError(t, err)
+			assert.Equal(t, appKey, app.ApplicationKey)
+			if assert.NotNil(t, app.MonitorPolicy) {
+				assert.Equal(t, tt.expectedType, app.MonitorPolicy.Type)
+				assert.Equal(t, tt.expectedValue, app.MonitorPolicy.Value)
+			}
+
+			utils.DeleteApplication(t, appKey)
+		})
+	}
+}
+
+func intPtr(i int) *int {
+	return &i
+}
+
 func TestDeleteApp(t *testing.T) {
 	appKey := utils.GenerateUniqueKey("app-delete")
 	utils.CreateBasicApplication(t, appKey)
