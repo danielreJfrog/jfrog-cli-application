@@ -93,7 +93,3 @@ func GenerateUniqueKey(prefix string) string {
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	return fmt.Sprintf("%s-%s", prefix, timestamp)
 }
-
-func IntPtr(i int) *int {
-	return &i
-}

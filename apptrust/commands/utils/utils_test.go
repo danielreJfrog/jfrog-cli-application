@@ -165,6 +165,110 @@ func TestParseNameVersionPairs(t *testing.T) {
 	}
 }
 
+func TestParseMonitorPolicyFlag(t *testing.T) {
+	valueFive := 5
+	valueThree := 3
+
+	tests := []struct {
+		name      string
+		input     string
+		expected  *model.MonitorPolicy
+		expectErr bool
+		errorMsg  string
+	}{
+		{
+			name:     "version count",
+			input:    "type=version_count, value=5",
+			expected: &model.MonitorPolicy{Type: model.MonitorPolicyTypeVersionCount, Value: &valueFive},
+		},
+		{
+			name:     "time frame in months",
+			input:    "type=time_frame_in_months, value=3",
+			expected: &model.MonitorPolicy{Type: model.MonitorPolicyTypeTimeframe, Value: &valueThree},
+		},
+		{
+			name:     "none without value",
+			input:    "type=none",
+			expected: &model.MonitorPolicy{Type: model.MonitorPolicyTypeNone},
+		},
+		{
+			name:      "missing type",
+			input:     "value=5",
+			expectErr: true,
+			errorMsg:  "missing required 'type' field",
+		},
+		{
+			name:      "invalid type",
+			input:     "type=bogus, value=5",
+			expectErr: true,
+			errorMsg:  "invalid type 'bogus'",
+		},
+		{
+			name:      "missing value for enabled type",
+			input:     "type=version_count",
+			expectErr: true,
+			errorMsg:  "'value' is required",
+		},
+		{
+			name:      "value set for none",
+			input:     "type=none, value=5",
+			expectErr: true,
+			errorMsg:  "'value' must not be set",
+		},
+		{
+			name:      "non-integer value",
+			input:     "type=version_count, value=abc",
+			expectErr: true,
+			errorMsg:  "must be an integer",
+		},
+		{
+			name:      "zero value",
+			input:     "type=version_count, value=0",
+			expectErr: true,
+			errorMsg:  "must be a positive integer",
+		},
+		{
+			name:      "negative value",
+			input:     "type=version_count, value=-1",
+			expectErr: true,
+			errorMsg:  "must be a positive integer",
+		},
+		{
+			name:      "unknown field",
+			input:     "type=version_count, value=5, foo=bar",
+			expectErr: true,
+			errorMsg:  "invalid field 'foo'",
+		},
+		{
+			name:      "empty string",
+			input:     "",
+			expectErr: true,
+			errorMsg:  "missing required 'type' field",
+		},
+		{
+			name:      "invalid key-value pair",
+			input:     "type",
+			expectErr: true,
+			errorMsg:  "invalid key-value pair",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := ParseMonitorPolicyFlag(tt.input)
+			if tt.expectErr {
+				assert.Error(t, err, "ParseMonitorPolicyFlag(%q) expected error, got nil", tt.input)
+				if tt.errorMsg != "" {
+					assert.Contains(t, err.Error(), tt.errorMsg, "error message should contain %q", tt.errorMsg)
+				}
+				return
+			}
+			assert.NoError(t, err, "ParseMonitorPolicyFlag(%q) unexpected error: %v", tt.input, err)
+			assert.Equal(t, tt.expected, result, "ParseMonitorPolicyFlag(%q) = %v, want %v", tt.input, result, tt.expected)
+		})
+	}
+}
+
 func TestParseLabelKeyValuePairs(t *testing.T) {
 	tests := []struct {
 		name      string
